@@ -1,4 +1,4 @@
-# LeoSubs News Bot
+# LeoSubs Bot
 
 ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
 ![Node.js](https://img.shields.io/badge/node.js-%23323330.svg?style=for-the-badge&logo=node.js&logoColor=white)
@@ -14,99 +14,105 @@
 
 ## English
 
-A Discord bot that keeps an eye on [leosubs.co](https://leosubs.co) and posts in a channel when a new episode comes out. It exists so nobody has to keep refreshing the site.
+LeoSubs Bot is a private Discord bot designed to monitor [leosubs.co](https://leosubs.co) and notify a Discord channel when new anime episodes are published.
 
-### How it works
+Its purpose is to provide a simple way for a community to keep track of new releases without having to manually check the website.
+
+### How It Works
+
+The general workflow can be summarized as follows:
 
 ```mermaid
-flowchart LR
-    A[Timer, every 5 min] --> B[Scraper]
-    B --> C{New episode?}
-    C -- no --> A
-    C -- yes --> D[Fetch anime and episode details]
-    D --> E[Build embed]
+flowchart TD
+    A[Periodic Check] --> B[Website Monitoring]
+    B --> C{New Episode?}
+    C -- No --> A
+    C -- Yes --> D[Collect Episode Information]
+    D --> E[Prepare Notification]
     E --> F[Post to Discord]
-    F --> G[Save to seen and history]
-    H[Nightly cleanup, 00:00] --> I[Delete old notifications]
+    F --> G[Record Release]
+
+    H[Scheduled Cleanup] --> I[Remove Older Notifications]
 ```
 
-Every 5 minutes the bot reads the site's latest episodes list. Each episode gets an ID built from the anime, season and episode number, and the bot checks it against what it has already seen. Anything new is handled from oldest to newest, so the channel stays in order.
+The bot periodically checks the website for newly published episodes.
 
-For each new episode the bot opens the anime page and the episode page and collects the cover image, year, score, studio, genres, synopsis, episode title, translator and editor. All of it goes into one embed. A role can be pinged if one is configured.
+When a new release is detected, relevant information about the anime and episode is collected and presented in a Discord notification.
 
-Translators and editors are matched against `credits.json`. If a name has a Discord ID there, the person is mentioned. If not, the name is written as plain text. If the site has no name, that field is left out.
+The notification can include information such as the anime, episode, cover image, production details, and members involved in the release.
 
-When an episode is the last one of a season, the embed description is different. The total episode counts come from `season-final-episode.json`, which is maintained by hand.
+The system can also notify specific Discord roles or users when appropriate.
 
-On the very first run the bot only memorizes the episodes that are already on the site and posts nothing, so a fresh install never spams the channel.
+Previously announced episodes are not announced again, allowing the bot to keep the notification channel organized.
 
-If the site fails to respond three checks in a row, the bot sends a DM to its owner.
+### First Run
 
-Every night at 00:00 a cleanup job deletes notification messages older than a set number of days. The record of the episode stays in the history file, marked as deleted.
+When the bot is started for the first time, existing releases are recognized without being posted as new notifications.
 
-### Data files
+This prevents a newly configured installation from filling the Discord channel with older releases.
 
-The bot has no database. Everything is stored in small JSON files.
+### Release History
 
-| File | What it holds |
-| --- | --- |
-| `seen.json` | Episodes the bot has already announced |
-| `history.json` | Past notifications, used by the cleanup job |
-| `status.json` | Health of the bot and the last check results |
-| `credits.json` | Translator and editor names mapped to Discord IDs |
-| `season-final-episode.json` | Total episode count per anime |
+The system keeps a record of previously processed releases.
 
-We tried SQLite at one point and went back to JSON. For this size of data it added more work than it saved. If `credits.json` is missing, the bot creates an empty one and keeps running.
+This allows the bot to distinguish between new and previously handled episodes and maintain a history of past notifications.
 
-### Tech stack
+### Notifications
 
-| Tool | Used for |
-| --- | --- |
-| Node.js | Runtime |
-| discord.js | Discord connection, commands, embeds |
-| @discordjs/voice | Staying in a fixed voice channel |
-| axios | HTTP requests |
-| cheerio | Reading the HTML |
-| node-cron | Scheduled jobs (nightly cleanup) |
-| dotenv | Config and secrets |
-| pm2 | Keeps the bot running and restarts it after a reboot |
+Release information is presented through Discord embeds.
 
-It runs on an Ubuntu VDS under pm2.
+Depending on the available information, notifications may contain details such as:
 
-### Project layout
+* Anime information
+* Episode information
+* Cover artwork
+* Production details
+* Translation and editing credits
+* Additional release information
 
-```
-bot.js              Starts the bot
-deploy-commands.js  Registers slash commands with Discord
-commands/           One file per command
-events/             ready, interactionCreate
-services/           scraper, notifier, messageCleanup
-data/               storage, status, history and the JSON files
-```
+The information shown can vary depending on what is available on the website.
 
-The scraping lives in a single function. If the site changes, or a real browser is ever needed, only that part has to be rewritten.
+### Scheduled Maintenance
 
-### Commands
+The bot performs scheduled maintenance to keep the notification channel clean.
 
-| Command | Description |
-| --- | --- |
-| `/ping` | Shows if the bot is up and its latency |
-| `/embed-olustur` | Opens a form (title, description, color, image, footer) and posts a custom embed. Admin only |
-| `/voice-baglan` | Joins the fixed voice channel. Admin only |
-| `/voice-ayril` | Leaves the voice channel. Admin only |
-| `/leo` | Lists the available commands |
-| `/takvim` | Shows the weekly release schedule, updated by hand each season |
+Older notification messages can be removed after a defined period while their release records remain preserved in the system's history.
+
+### Availability Monitoring
+
+The bot can monitor the availability of the website.
+
+If the monitored source remains unavailable for an extended period, the system can notify the bot owner so that the issue can be investigated.
+
+### Discord Features
+
+In addition to automatic release notifications, the bot provides several Discord-based utilities for administrators and server members.
+
+These include basic bot status information, release schedule information, custom embed creation, and voice-channel related controls.
+
+### Tech Stack
+
+The project is built around a Node.js-based Discord bot architecture and uses several supporting technologies for Discord communication, website monitoring, scheduled tasks, configuration, and process management.
+
+The bot currently runs on a private Ubuntu VDS environment.
 
 ### Notes
 
-The bot only reads the public latest-episodes page of leosubs.co. It does not copy or republish any content. It just carries the "new episode" information to Discord.
+The bot only monitors publicly available release information from [leosubs.co](https://leosubs.co).
 
-The bot is not public and has no invite link.
+It does not provide an invite link and is not distributed as a public Discord bot.
+
+### Privacy
+
+The source code and internal implementation of the project are private.
+
+This repository only documents the general purpose and user-visible behavior of the bot. Internal implementation details, data structures, and deployment information are intentionally not documented here.
 
 ### Contact
 
-- Website: [leosubs.co](https://leosubs.co)
-- Discord: `wzlm`
+* Website: [leosubs.co](https://leosubs.co)
+* Discord Server: [Server](https://discord.gg/8HKuCMYFMr)
+* Discord: `wzlm`
 
 ### License
 
@@ -116,90 +122,108 @@ See [LICENSE.md](LICENSE.md).
 
 ## Türkçe
 
-[leosubs.co](https://leosubs.co)'yu takip edip yeni bir bölüm çıktığında kanala haber veren bir Discord botu. Amacı, sayfayı sürekli yenilemek zorunda kalmamak.
+LeoSubs News Bot, [leosubs.co](https://leosubs.co) sitesini takip ederek yeni anime bölümleri yayınlandığında Discord üzerinden bildirim göndermek amacıyla geliştirilmiş özel bir Discord botudur.
 
-### Nasıl çalışıyor
+Amacı, yeni bölümleri takip eden kişilerin siteyi sürekli kontrol etmek zorunda kalmadan yeni yayınlardan haberdar olmasını sağlamaktır.
 
-Yukarıdaki şema burada da geçerli.
+### Nasıl Çalışıyor
 
-Bot 5 dakikada bir sitenin son bölümler listesini okuyor. Her bölüme anime, sezon ve bölüm numarasından bir kimlik çıkarıp daha önce gördükleriyle karşılaştırıyor. Yeni çıkanlar eskiden yeniye doğru işleniyor, böylece kanalda sıra bozulmuyor.
+Genel çalışma mantığı şu şekilde özetlenebilir:
 
-Her yeni bölüm için anime sayfasını ve bölüm sayfasını açıp kapak resmi, yıl, puan, stüdyo, türler, konu, bölüm adı, çevirmen ve redaktör bilgilerini topluyor ve hepsini tek bir embed'e koyuyor. İstenirse belirli bir rol de etiketleniyor.
+```mermaid
+flowchart LR
+    A[Periyodik Kontrol] --> B[Site Takibi]
+    B --> C{Yeni Bölüm?}
+    C -- Hayır --> A
+    C -- Evet --> D[Bölüm Bilgilerini Topla]
+    D --> E[Bildirimi Hazırla]
+    E --> F[Discord'a Gönder]
+    F --> G[Yayını Kaydet]
 
-Çevirmen ve redaktör isimleri `credits.json` ile eşleştiriliyor. Orada Discord ID'si olan kişi etiketleniyor, olmayanın ismi düz yazı olarak görünüyor. Sitede isim yoksa o alan hiç gösterilmiyor.
-
-Bir bölüm sezonun son bölümüyse embed açıklaması farklı yazılıyor. Toplam bölüm sayıları elle tutulan `season-final-episode.json` dosyasından geliyor.
-
-Bot ilk açıldığında sitedeki mevcut bölümleri sadece hafızaya alıyor, kanala hiçbir şey atmıyor. Yani yeni kurulumda kanal mesajla dolmuyor.
-
-Site üst üste üç kontrolde cevap vermezse bot sahibine DM atıyor.
-
-Her gece 00:00'da bir temizlik görevi çalışıp belirlenen günden eski bildirim mesajlarını siliyor. Bölümün kaydı geçmiş dosyasında "silindi" işaretiyle duruyor.
-
-### Veri dosyaları
-
-Botta veritabanı yok, her şey küçük JSON dosyalarında tutuluyor.
-
-| Dosya | İçeriği |
-| --- | --- |
-| `seen.json` | Botun daha önce bildirdiği bölümler |
-| `history.json` | Geçmiş bildirimler, temizlik görevi bunu kullanıyor |
-| `status.json` | Botun sağlık durumu ve son kontrol sonuçları |
-| `credits.json` | Çevirmen/redaktör isimleri ve Discord ID eşleşmeleri |
-| `season-final-episode.json` | Animelerin toplam bölüm sayıları |
-
-Bir ara SQLite denedik, sonra JSON'a geri döndük. Bu kadar küçük veri için getirdiği iş kazandırdığından fazlaydı. `credits.json` yoksa bot boş bir tane oluşturuyor ve çalışmaya devam ediyor.
-
-### Kullanılan teknolojiler
-
-| Araç | Ne için |
-| --- | --- |
-| Node.js | Çalışma ortamı |
-| discord.js | Discord bağlantısı, komutlar, embed'ler |
-| @discordjs/voice | Sabit bir ses kanalında durmak |
-| axios | HTTP istekleri |
-| cheerio | HTML okuma |
-| node-cron | Zamanlanmış görevler (gece temizliği) |
-| dotenv | Ayarlar ve gizli bilgiler |
-| pm2 | Botu açık tutmak, yeniden başlatmada ayağa kaldırmak |
-
-Bot, Ubuntu bir VDS üzerinde pm2 ile çalışıyor.
-
-### Proje yapısı
-
-```
-bot.js              Botu başlatır
-deploy-commands.js  Slash komutlarını Discord'a tanıtır
-commands/           Her komutun kendi dosyası
-events/             ready, interactionCreate
-services/           scraper, notifier, messageCleanup
-data/               storage, status, history ve JSON dosyaları
+    H[Zamanlanmış Temizlik] --> I[Eski Bildirimleri Sil]
 ```
 
-Site okuma işi tek bir fonksiyonda duruyor. Site değişirse ya da bir gün gerçek tarayıcı gerekirse sadece orası yeniden yazılacak.
+Bot belirli aralıklarla siteyi kontrol ederek yeni yayınlanan bölümleri takip eder.
 
-### Komutlar
+Yeni bir bölüm tespit edildiğinde anime ve bölüm hakkında mevcut bilgiler alınır ve Discord üzerinde düzenli bir bildirim oluşturulur.
 
-| Komut | Açıklama |
-| --- | --- |
-| `/ping` | Botun açık olup olmadığını ve gecikmesini gösterir |
-| `/embed-olustur` | Form açar (başlık, açıklama, renk, resim, footer) ve istenen embed'i gönderir. Sadece yönetici |
-| `/voice-baglan` | Botu sabit ses kanalına sokar. Sadece yönetici |
-| `/voice-ayril` | Botu ses kanalından çıkarır. Sadece yönetici |
-| `/leo` | Kullanılabilir komutları listeler |
-| `/takvim` | Haftalık yayın takvimini gösterir, her sezon elle güncellenir |
+Bildirimlerde anime, bölüm, kapak görseli, yapım bilgileri ve yayında görev alan kişiler gibi bilgiler bulunabilir.
+
+Gerektiğinde belirli Discord rolleri veya kullanıcıları da bildirim içerisinde etiketlenebilir.
+
+Daha önce bildirilmiş bölümler tekrar bildirilmez. Böylece bildirim kanalı gereksiz tekrarlarla doldurulmaz.
+
+### İlk Çalıştırma
+
+Bot ilk kez çalıştırıldığında sitede zaten bulunan eski yayınları yeni bölüm olarak paylaşmaz.
+
+Böylece yeni kurulan bir sistemin mevcut bölümleri arka arkaya Discord kanalına göndermesi engellenir.
+
+### Yayın Geçmişi
+
+Sistem daha önce işlenen yayınların kaydını tutar.
+
+Bu kayıtlar sayesinde yeni bölümler ile daha önce işlenmiş bölümler birbirinden ayırt edilir ve geçmiş yayınlar takip edilebilir.
+
+### Bildirimler
+
+Yeni yayınlar Discord embedleri aracılığıyla gösterilir.
+
+Mevcut bilgilere bağlı olarak bildirimlerde:
+
+* Anime bilgileri
+* Bölüm bilgileri
+* Kapak görseli
+* Yapım bilgileri
+* Çeviri ve redakte bilgileri
+* Diğer yayın bilgileri
+
+yer alabilir.
+
+Gösterilen bilgiler, ilgili yayında sitede bulunan verilere göre değişebilir.
+
+### Zamanlanmış Bakım
+
+Bot, bildirim kanalının düzenli kalması için belirli zamanlarda bakım işlemleri gerçekleştirir.
+
+Belirli bir süreden eski bildirimler kanaldan kaldırılabilir. Ancak ilgili yayın kayıtları sistem içerisindeki geçmişte korunur.
+
+### Site Durumu Takibi
+
+Bot, takip edilen sitenin erişilebilirliğini de kontrol edebilir.
+
+Kaynak uzun süre boyunca kullanılamaz durumda olduğunda bot sahibi bilgilendirilebilir. Böylece oluşabilecek sorunlar daha hızlı fark edilebilir.
+
+### Discord Özellikleri
+
+Otomatik yayın bildirimlerinin yanında bot, Discord içerisinde çeşitli yardımcı özellikler de sunar.
+
+Bunlar arasında temel bot durum bilgileri, yayın takvimi, özel embed oluşturma ve ses kanalıyla ilgili yönetim özellikleri bulunur.
+
+### Kullanılan Teknolojiler
+
+Proje, Node.js tabanlı bir Discord bot yapısı üzerine kuruludur ve Discord iletişimi, site takibi, zamanlanmış işlemler, yapılandırma ve süreç yönetimi için çeşitli teknolojilerden yararlanır.
+
+Bot şu anda özel bir Ubuntu VDS ortamında çalışmaktadır.
 
 ### Notlar
 
-Bot sadece leosubs.co'nun herkese açık son bölümler sayfasını okuyor. Hiçbir içeriği kopyalamıyor ya da yeniden yayınlamıyor, sadece "yeni bölüm çıktı" bilgisini Discord'a taşıyor.
+Bot yalnızca [leosubs.co](https://leosubs.co) üzerinde herkese açık olarak bulunan yayın bilgilerini takip eder.
 
-Bot herkese açık değil, davet linki yok.
+Herhangi bir içerik dağıtımı gerçekleştirmez ve herkese açık bir Discord davet bağlantısı bulunmaz.
+
+### Gizlilik
+
+Projenin kaynak kodu ve dahili çalışma yapısı özeldir.
+
+Bu repository yalnızca botun genel amacını ve kullanıcı tarafından görülebilen çalışma şeklini açıklar. Dahili uygulama ayrıntıları, veri yapıları ve kurulum/deployment bilgileri özellikle dokümantasyon dışında tutulmuştur.
 
 ### İletişim
 
-- Site: [leosubs.co](https://leosubs.co)
-- Discord: `wzlm`
+* Site: [leosubs.co](https://leosubs.co)
+* Discord Sunucusu: [Sunucu](https://discord.gg/8HKuCMYFMr)
+* Discord: `wzlm`
 
 ### Lisans
 
-[LICENSE.md](LICENSE.md) dosyasına bak.
+[LICENSE.md](LICENSE.md) dosyasına bakınız.
