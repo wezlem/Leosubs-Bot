@@ -23,7 +23,7 @@ Its purpose is to provide a simple way for a community to keep track of new rele
 The general workflow can be summarized as follows:
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[Periodic Check] --> B[Website Monitoring]
     B --> C{New Episode?}
     C -- No --> A
